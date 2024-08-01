@@ -16,7 +16,7 @@
 //! Add the following to the `[dependencies]` section of your `Cargo.toml`:
 //!
 //! ```toml
-//! pwhash = "1"
+//! pw_hash = "0.1"
 //! ```
 //!
 //! # Examples
@@ -24,7 +24,7 @@
 //! To verify a password hashed with a known algorithm:
 //!
 //! ```
-//! use pwhash::bcrypt;
+//! use pw_hash::bcrypt;
 //!
 //! let h = "$2y$05$bvIG6Nmid91Mu9RcmmWZfO\
 //!          5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe";
@@ -34,7 +34,7 @@
 //! To hash a password using default parameters:
 //!
 //! ```
-//! use pwhash::bcrypt;
+//! use pw_hash::bcrypt;
 //!
 //! let h = bcrypt::hash("password").unwrap();
 //! ```
@@ -42,7 +42,7 @@
 //! To verify a password known to be in one of Unix modular hash formats:
 //!
 //! ```
-//! use pwhash::unix;
+//! use pw_hash::unix;
 //!
 //! let h = "$2y$05$bvIG6Nmid91Mu9RcmmWZfO\
 //!          5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe";

@@ -18,7 +18,7 @@
 //! and default output variant (__2b__):
 //!
 //! ```
-//! use pwhash::bcrypt;
+//! use pw_hash::bcrypt;
 //!
 //! let hash = bcrypt::hash("password").unwrap();
 //! ```
@@ -27,7 +27,7 @@
 //! pick the salt and use the default cost:
 //!
 //! ```
-//! use pwhash::bcrypt::{self, BcryptSetup, BcryptVariant};
+//! use pw_hash::bcrypt::{self, BcryptSetup, BcryptVariant};
 //!
 //! let hash = bcrypt::hash_with(BcryptSetup {
 //!                variant: Some(BcryptVariant::V2y),

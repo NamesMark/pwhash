@@ -15,7 +15,7 @@
 //! # Example
 //!
 //! ```
-//! use pwhash::{bsdi_crypt, HashSetup};
+//! use pw_hash::{bsdi_crypt, HashSetup};
 //!
 //! assert_eq!(bsdi_crypt::hash_with(
 //!         HashSetup { salt: Some("K0Ay"), rounds: Some(7250) },

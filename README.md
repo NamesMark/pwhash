@@ -1,21 +1,23 @@
-# pwhash
+# pw_hash
 
 A collection of password hashing and verification routines.
 
-See the [documentation](https://docs.rs/pwhash/1.0.0/pwhash/) for API reference.
+This is a fork of the currently unmaintained `pwhash`, with updated dependencies.
+
+See the [documentation](https://docs.rs/pw_hash/) for API reference.
 
 ## Getting Started
 
 Add the following to the `[dependencies]` section of your `Cargo.toml`:
 
 ```toml
-pwhash = "1"
+pw_hash = "0.1"
 ```
 
 ## Example
 
 ```rust
-use pwhash::bcrypt;
+use pw_hash::bcrypt;
 
 // Hash a password with default parameters.
 let h_new = bcrypt::hash("password").unwrap();

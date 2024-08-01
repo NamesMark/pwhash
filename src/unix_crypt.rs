@@ -13,7 +13,7 @@
 //! # Example
 //!
 //! ```
-//! use pwhash::unix_crypt;
+//! use pw_hash::unix_crypt;
 //!
 //! assert_eq!(unix_crypt::hash_with("xO",
 //!     "password").unwrap(), "xOAFZqRz5RduI");

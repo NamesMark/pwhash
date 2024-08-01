@@ -15,7 +15,7 @@
 //! # Example
 //!
 //! ```
-//! use pwhash::sha256_crypt;
+//! use pw_hash::sha256_crypt;
 //!
 //! let h = "$5$rounds=11858$WH1ABM5sKhxbkgCK$\
 //!          aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1";

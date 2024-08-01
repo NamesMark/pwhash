@@ -1,10 +1,11 @@
 [package]
 name = "pw_hash"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ivan Nejgebauer <inejge@gmail.com>, Mark Firman <markfirn@gmail.com>"]
 description = "A collection of password hashing routines in pure Rust. Fork of pwhash by inejge."
 homepage = "https://github.com/NamesMark/pwhash"
 repository = "https://github.com/NamesMark/pwhash"
+documentation = "https://docs.rs/pw_hash/latest/pw_hash/"
 readme = "README.md"
 license = "MIT"
 keywords = ["password", "hash", "hashing", "crypt"]

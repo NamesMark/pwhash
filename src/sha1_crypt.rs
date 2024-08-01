@@ -16,7 +16,7 @@
 //! # Example
 //!
 //! ```
-//! use pwhash::sha1_crypt;
+//! use pw_hash::sha1_crypt;
 //!
 //! assert_eq!(sha1_crypt::hash_with(
 //!     "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a",

@@ -15,7 +15,7 @@
 //! # Example
 //!
 //! ```
-//! use pwhash::sha512_crypt;
+//! use pw_hash::sha512_crypt;
 //!
 //! let h =
 //!     "$6$G/gkPn17kHYo0gTF$xhDFU0QYExdMH2ghOWKrrVtu1BuTpNMSJ\

@@ -15,7 +15,7 @@
 //! # Example
 //!
 //! ```
-//! use pwhash::md5_crypt;
+//! use pw_hash::md5_crypt;
 //!
 //! assert_eq!(md5_crypt::hash_with(
 //!     "$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0",
