@@ -13,10 +13,10 @@ categories = ["cryptography", "authentication"]
 edition = "2021"
 
 [dependencies]
-md-5 = "0.10.1"
-sha-1 = "0.10.0"
-sha2 = "0.10.2"
+md-5 = "0.10.6"
+sha1 = "0.10.6"
+sha2 = "0.10.8"
 blowfish = { version = "0.9.1", features = ["bcrypt"] }
 hmac = "0.12.1"
-byteorder = "1.4.3"
+byteorder = "1.5.0"
 rand = "0.8.5"
