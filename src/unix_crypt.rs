@@ -75,7 +75,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn custom() {
-	assert_eq!("aZGJuE6EXrjEE", super::hash_with("aZ", "test").unwrap());
+	assert_eq!("aZGJuE6EXrjEE", super::hash_with("aZ", "test").expect("hash_with"));
 	assert_eq!(super::verify("test", "aZGJuE6EXrjEE"), true);
 	assert_eq!(super::verify("test", "aZFJuE6EXrjEE"), false);
 	assert_eq!(super::verify("test", "!!"), false);

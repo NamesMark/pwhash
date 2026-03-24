@@ -20,7 +20,7 @@
 //! let h =
 //!     "$6$G/gkPn17kHYo0gTF$xhDFU0QYExdMH2ghOWKrrVtu1BuTpNMSJ\
 //!      URCXk43.EYekmK8iwV6RNqftUUC8mqDel1J7m3JEbUkbu4YyqSyv/";
-//! assert_eq!(sha512_crypt::hash_with(h, "test").unwrap(), h);
+//! assert_eq!(sha512_crypt::hash_with(h, "test").expect("hash_with"), h);
 //! ```
 //!
 //! # Parameters
@@ -108,10 +108,10 @@ mod tests {
     fn custom() {
 	assert_eq!(super::hash_with(
 		   "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
-		    uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1", "test").unwrap(),
+		    uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1", "test").expect("hash_with"),
 	    "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
 	     uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1");
-	assert_eq!(super::hash_with(HashSetup { salt: Some("G/gkPn17kHYo0gTF"), rounds: Some(11531) }, "test").unwrap(),
+	assert_eq!(super::hash_with(HashSetup { salt: Some("G/gkPn17kHYo0gTF"), rounds: Some(11531) }, "test").expect("hash_with"),
 	    "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
 	     uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1");
     }
@@ -120,7 +120,7 @@ mod tests {
     fn implicit_dflt_rounds() {
 	assert_eq!(super::hash_with(
 		   "$6$G/gkPn17kHYo0gTF$xhDFU0QYExdMH2ghOWKrrVtu1BuTpNMSJURCXk43.\
-		    EYekmK8iwV6RNqftUUC8mqDel1J7m3JEbUkbu4YyqSyv/", "test").unwrap(),
+		    EYekmK8iwV6RNqftUUC8mqDel1J7m3JEbUkbu4YyqSyv/", "test").expect("hash_with"),
 	    "$6$G/gkPn17kHYo0gTF$xhDFU0QYExdMH2ghOWKrrVtu1BuTpNMSJURCXk43.\
 	     EYekmK8iwV6RNqftUUC8mqDel1J7m3JEbUkbu4YyqSyv/");
     }
