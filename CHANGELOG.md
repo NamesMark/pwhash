@@ -1,3 +1,9 @@
+## pw_hash v0.1.2, 2026-03-24
+
+* [internal] Update `rand` from 0.8 to 0.10, `sha2` from 0.10.8 to 0.10.9, edition to 2024.
+* [internal] Get rid of unwraps in favor of `let-else` and `if let` patterns.
+* [internal] Fix Clippy warnings: div_ceil, needless borrows, manual swap, range contains, doc formatting, lifetime elision
+
 ## pw_hash v0.1.1, 2024-08-01
 
 * Documentation and links updated.
