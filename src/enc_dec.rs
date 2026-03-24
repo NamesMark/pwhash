@@ -7,8 +7,6 @@
 // modified, or distributed except according to the terms of this
 // license.
 
-use std::char;
-use std::str::from_utf8;
 use crate::error::Error;
 use super::Result;
 
@@ -84,7 +82,7 @@ fn b_c_hash64_encode(bs: &[u8], hs: &[u8]) -> String {
 	    g_idx += 1;
 	}
 	for _ in 0..4 {
-	    out.push(char::from_u32(hs[((enc >> 18) & 0x3F) as usize] as u32).unwrap());
+	    out.push(hs[((enc >> 18) & 0x3F) as usize] as char);
 	    enc <<= 6;
 	}
     }
@@ -112,7 +110,7 @@ pub fn sha1crypt_hash64_encode(bs: &[u8]) -> String {
 	    g_idx += 1;
 	}
 	for _ in 0..4 {
-	    out.push(char::from_u32(CRYPT_HASH64[(enc & 0x3F) as usize] as u32).unwrap());
+	    out.push(CRYPT_HASH64[(enc & 0x3F) as usize] as char);
 	    enc >>= 6;
 	}
     }
@@ -132,7 +130,7 @@ pub fn md5_sha2_hash64_encode(bs: &[u8]) -> String {
 	    g_idx += 1;
 	}
 	for _ in 0..4 {
-	    out.push(char::from_u32(CRYPT_HASH64[(enc & 0x3F) as usize] as u32).unwrap());
+	    out.push(CRYPT_HASH64[(enc & 0x3F) as usize] as char);
 	    enc >>= 6;
 	}
     }
@@ -182,7 +180,7 @@ pub fn encode_val(mut val: u32, mut nhex: usize) -> String {
 	val >>= 6;
 	i += 1;
     }
-    from_utf8(&val_arr[..vlen]).unwrap().to_owned()
+    val_arr[..vlen].iter().map(|&b| b as char).collect()
 }
 
 #[cfg(test)]
