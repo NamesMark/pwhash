@@ -288,21 +288,21 @@ mod parse {
 	#[test]
 	fn drain_string() {
 	    let mut hs = HashSlice::new("$2y$05$bvIG6Nmid91Mu9RcmmWZfO5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
-	    assert_eq!(hs.take_until(b'$').unwrap(), "");
-	    assert_eq!(hs.take_until(b'$').unwrap(), "2y");
-	    assert_eq!(hs.take_until(b'$').unwrap(), "05");
-	    assert_eq!(hs.take(22).unwrap(), "bvIG6Nmid91Mu9RcmmWZfO");
+	    assert_eq!(hs.take_until(b'$').expect("take_until"), "");
+	    assert_eq!(hs.take_until(b'$').expect("take_until"), "2y");
+	    assert_eq!(hs.take_until(b'$').expect("take_until"), "05");
+	    assert_eq!(hs.take(22).expect("take"), "bvIG6Nmid91Mu9RcmmWZfO");
 	    let mut hs1 = HashSlice { bp: hs.bp, pos: hs.pos, len: hs.len };
-	    assert_eq!(hs.take_until(b'$').unwrap(), "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
+	    assert_eq!(hs.take_until(b'$').expect("take_until"), "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
 	    assert_eq!(hs.at_end(), true);
-	    assert_eq!(hs1.take(31).unwrap(), "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
+	    assert_eq!(hs1.take(31).expect("take"), "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
 	    assert_eq!(hs1.at_end(), true);
 	}
 
 	#[test]
 	fn empty_string() {
 	    let mut hs = HashSlice::new("");
-	    assert_eq!(hs.take_until(b'$').unwrap(), "");
+	    assert_eq!(hs.take_until(b'$').expect("take_until"), "");
 	    assert_eq!(hs.at_end(), true);
 	    let hs = HashSlice::new("");
 	    assert_eq!(hs.at_end(), false);
@@ -311,16 +311,16 @@ mod parse {
 	#[test]
 	fn empty_elements() {
 	    let mut hs = HashSlice::new("$");
-	    assert_eq!(hs.take_until(b'$').unwrap(), "");
-	    assert_eq!(hs.take_until(b'$').unwrap(), "");
+	    assert_eq!(hs.take_until(b'$').expect("first take_until"), "");
+	    assert_eq!(hs.take_until(b'$').expect("second take_until"), "");
 	    assert_eq!(hs.at_end(), true);
 	}
 
 	#[test]
 	fn combined_take() {
 	    let mut hs = HashSlice::new("$");
-	    let _ = hs.take_until(b'$').unwrap();
-	    assert_eq!(hs.take_until(b'$').unwrap(), "");
+	    let _ = hs.take_until(b'$').expect("first take_until");
+	    assert_eq!(hs.take_until(b'$').expect("take_until"), "");
 	    assert_eq!(hs.at_end(), true);
 	}
     }
@@ -364,9 +364,9 @@ pub mod unix {
     mod tests {
 	#[test]
 	fn crypt_recognized() {
-	    assert_eq!(super::crypt("password", "$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0").unwrap(),
+	    assert_eq!(super::crypt("password", "$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0").expect("crypt"),
 		"$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0");
-	    assert_eq!(super::crypt("test", "aZGJuE6EXrjEE").unwrap(), "aZGJuE6EXrjEE");
+	    assert_eq!(super::crypt("test", "aZGJuE6EXrjEE").expect("crypt"), "aZGJuE6EXrjEE");
 	}
     }
 }

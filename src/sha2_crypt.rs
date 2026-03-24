@@ -133,7 +133,7 @@ pub fn parse_sha2_hash<'a>(hash: &'a str, magic: &str) -> Result<HashSetup<'a>> 
     let rounds = if maybe_rounds.starts_with("rounds=") {
 	let mut rhs = parse::HashSlice::new(maybe_rounds);
 	rhs.take_until(b'=');
-	Some(rhs.take_until(b'$').unwrap().parse::<u32>().map_err(|_e| Error::InvalidRounds)?)
+	Some(rhs.take_until(b'$').ok_or(Error::InvalidHashString)?.parse::<u32>().map_err(|_e| Error::InvalidRounds)?)
     } else { None };
     let salt = if rounds.is_none() {
 	maybe_rounds

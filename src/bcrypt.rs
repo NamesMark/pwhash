@@ -294,6 +294,6 @@ mod tests {
 	assert_eq!("$2y$05$bvIG6Nmid91Mu9RcmmWZfO5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe",
 	    super::hash_with(BcryptSetup { salt: Some("bvIG6Nmid91Mu9RcmmWZfO"), cost: Some(5),
 		variant: Some(BcryptVariant::V2y) },
-	    "password").unwrap());
+	    "password").expect("hash_with"));
     }
 }

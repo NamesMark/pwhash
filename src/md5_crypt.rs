@@ -180,9 +180,9 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn custom() {
-	assert_eq!(super::hash_with("$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0", "password").unwrap(),
+	assert_eq!(super::hash_with("$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0", "password").expect("hash_with"),
 	    "$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0");
-	assert_eq!(super::hash_with(HashSetup { salt: Some("5pZSV9va"), rounds: None }, "password").unwrap(),
+	assert_eq!(super::hash_with(HashSetup { salt: Some("5pZSV9va"), rounds: None }, "password").expect("hash_with"),
 	    "$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0");
     }
 }

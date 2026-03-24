@@ -19,7 +19,7 @@
 //!
 //! let h = "$5$rounds=11858$WH1ABM5sKhxbkgCK$\
 //!          aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1";
-//! assert_eq!(sha256_crypt::hash_with(h, "test").unwrap(), h);
+//! assert_eq!(sha256_crypt::hash_with(h, "test").expect("hash_with"), h);
 //! ```
 //!
 //! # Parameters
@@ -108,9 +108,9 @@ mod tests {
     #[allow(deprecated)]
     fn custom() {
 	assert_eq!(super::hash_with(
-		   "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1", "test").unwrap(),
+		   "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1", "test").expect("hash_with"),
 	    "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1");
-	assert_eq!(super::hash_with(HashSetup { salt: Some("WH1ABM5sKhxbkgCK"), rounds: Some(11858) }, "test").unwrap(),
+	assert_eq!(super::hash_with(HashSetup { salt: Some("WH1ABM5sKhxbkgCK"), rounds: Some(11858) }, "test").expect("hash_with"),
 	    "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1");
     }
 
@@ -118,7 +118,7 @@ mod tests {
     #[allow(deprecated)]
     fn implicit_dflt_rounds() {
 	assert_eq!(super::hash_with(
-		   "$5$WH1ABM5sKhxbkgCK$sOnTVjQn1Y3EWibd8gWqqJqjH.KaFrxJE5rijqxcPp7", "test").unwrap(),
+		   "$5$WH1ABM5sKhxbkgCK$sOnTVjQn1Y3EWibd8gWqqJqjH.KaFrxJE5rijqxcPp7", "test").expect("hash_with"),
 	    "$5$WH1ABM5sKhxbkgCK$sOnTVjQn1Y3EWibd8gWqqJqjH.KaFrxJE5rijqxcPp7");
     }
 }

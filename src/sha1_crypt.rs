@@ -150,9 +150,9 @@ mod tests {
 
     #[test]
     fn custom() {
-	assert_eq!(super::hash_with("$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a", "password").unwrap(),
+	assert_eq!(super::hash_with("$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a", "password").expect("hash_with"),
 	    "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a");
-	assert_eq!(super::hash_with(HashSetup { salt: Some("iVdJqfSE"), rounds: Some(19703) }, "password").unwrap(),
+	assert_eq!(super::hash_with(HashSetup { salt: Some("iVdJqfSE"), rounds: Some(19703) }, "password").expect("hash_with"),
 	    "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a");
     }
 

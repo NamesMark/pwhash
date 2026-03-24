@@ -193,7 +193,7 @@ mod tests {
 	    let input: Vec<u8> = (0..len).map(|i| (i * 37 + 13) as u8).collect();
 	    let encoded = bcrypt_hash64_encode(&input);
 	    let mut decoded = vec![0u8; input.len()];
-	    bcrypt_hash64_decode(&encoded, &mut decoded).unwrap();
+	    bcrypt_hash64_decode(&encoded, &mut decoded).expect("decode");
 	    assert_eq!(input, decoded, "roundtrip failed for len={}", len);
 	}
     }

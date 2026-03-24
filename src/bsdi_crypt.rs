@@ -125,9 +125,9 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn custom() {
-	assert_eq!(super::hash_with(HashSetup { salt: Some("K0Ay"), rounds: None }, "password").unwrap(),
+	assert_eq!(super::hash_with(HashSetup { salt: Some("K0Ay"), rounds: None }, "password").expect("hash_with"),
 	    "_Gl/.K0Ay.aosctsbJ1k");
-	assert_eq!(super::hash_with("_Gl/.K0Ay.aosctsbJ1k", "password").unwrap(), "_Gl/.K0Ay.aosctsbJ1k");
+	assert_eq!(super::hash_with("_Gl/.K0Ay.aosctsbJ1k", "password").expect("hash_with"), "_Gl/.K0Ay.aosctsbJ1k");
     }
 
     #[test]
