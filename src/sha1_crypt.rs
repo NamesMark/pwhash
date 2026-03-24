@@ -31,7 +31,7 @@
 //! * __Salt length__: 0 to 64 characters. Default is 8.
 //!
 //! * __Rounds__: 1 to 2<sup>32</sup>-1. Default is 24680, which
-//! is slightly varied if chosen.
+//!   is slightly varied if chosen.
 //!
 //! # Hash Format
 //!
@@ -88,7 +88,7 @@ pub fn hash<B: AsRef<[u8]>>(pass: B) -> Result<String> {
 
 const MAGIC_LEN: usize = 6;
 
-fn parse_sha1_hash(hash: &str) -> Result<HashSetup> {
+fn parse_sha1_hash(hash: &str) -> Result<HashSetup<'_>> {
     let mut hs = parse::HashSlice::new(hash);
     if hs.take(MAGIC_LEN).unwrap_or("X") != "$sha1$" {
 	return Err(Error::InvalidHashString);

@@ -30,8 +30,8 @@
 //! * __Salt length__: 0 to 16 characters. Default is 16.
 //!
 //! * __Rounds__: 1000 to 999999999. Default is 5000. If a number
-//! outside of the range is chosen, it is coerced to the nearest
-//! limit.
+//!   outside of the range is chosen, it is coerced to the nearest
+//!   limit.
 //!
 //! # Hash Format
 //!
@@ -78,7 +78,7 @@ pub fn hash<B: AsRef<[u8]>>(pass: B) -> Result<String> {
     do_sha512_crypt(pass.as_ref(), &saltstr, None)
 }
 
-fn parse_sha512_hash(hash: &str) -> Result<HashSetup> {
+fn parse_sha512_hash(hash: &str) -> Result<HashSetup<'_>> {
     parse_sha2_hash(hash, SHA512_MAGIC)
 }
 
