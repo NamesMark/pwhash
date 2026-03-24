@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 keywords = ["password", "hash", "hashing", "crypt"]
 categories = ["cryptography", "authentication"]
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 md-5 = "0.10.6"
