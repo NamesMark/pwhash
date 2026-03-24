@@ -69,7 +69,7 @@ pub fn hash<B: AsRef<[u8]>>(pass: B) -> Result<String> {
     bsdi_crypt(pass.as_ref(), &saltstr, DEFAULT_ROUNDS)
 }
 
-fn parse_bsdi_hash(hash: &str) -> Result<HashSetup> {
+fn parse_bsdi_hash(hash: &str) -> Result<HashSetup<'_>> {
     let mut hs = parse::HashSlice::new(hash);
     if hs.take(1).unwrap_or("X") != "_" {
 	return Err(Error::InvalidHashString);
@@ -99,13 +99,13 @@ pub fn hash_with<'a, IHS, B>(param: IHS, pass: B) -> Result<String>
 {
     let hs = IHS::into_hash_setup(param, parse_bsdi_hash)?;
     let rounds = if let Some(r) = hs.rounds {
-	if r < MIN_ROUNDS || r > MAX_ROUNDS {
+	if !(MIN_ROUNDS..=MAX_ROUNDS).contains(&r) {
 	    return Err(Error::InvalidRounds);
 	}
 	r
     } else { DEFAULT_ROUNDS };
-    if hs.salt.is_some() {
-	bsdi_crypt(pass.as_ref(), hs.salt.unwrap(), rounds)
+    if let Some(salt) = hs.salt {
+	bsdi_crypt(pass.as_ref(), salt, rounds)
     } else {
 	let saltstr = random::gen_salt_str(SALT_LEN);
 	bsdi_crypt(pass.as_ref(), &saltstr, rounds)

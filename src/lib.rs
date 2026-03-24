@@ -149,23 +149,22 @@ pub trait FindNul {
 
 impl FindNul for str {
     fn nul_terminated_subslice(&self) -> &[u8] {
-        let nul_pos = self.as_bytes().windows(1).position(|window| window == [0u8]).unwrap_or_else(|| self.len());
-        self[..nul_pos].as_bytes()
+        let nul_pos = self.as_bytes().windows(1).position(|window| window == [0u8]).unwrap_or(self.len());
+        &self.as_bytes()[..nul_pos]
     }
 }
 
 impl FindNul for [u8] {
     fn nul_terminated_subslice(&self) -> &[u8] {
-        let nul_pos = self.windows(1).position(|window| window == [0u8]).unwrap_or_else(|| self.len());
-        self[..nul_pos].as_ref()
+        let nul_pos = self.windows(1).position(|window| window == [0u8]).unwrap_or(self.len());
+        &self[..nul_pos]
     }
 }
 
 fn consteq(hash: &str, calchash: Result<String>) -> bool {
-    if calchash.is_err() {
+    let Ok(hstr) = calchash else {
 	return false;
-    }
-    let hstr = calchash.unwrap();
+    };
     if hash.len() != hstr.len() {
 	return false;
     }
@@ -173,14 +172,13 @@ fn consteq(hash: &str, calchash: Result<String>) -> bool {
 }
 
 mod random {
-    use rand::{Rng, random};
-    use rand::rngs::OsRng;
-    use rand::distributions::Standard;
+    use rand::RngExt;
     use crate::enc_dec::bcrypt_hash64_encode;
 
     pub fn gen_salt_str(chars: usize) -> String {
-	let bytes = ((chars + 3) / 4) * 3;
-	let rv = OsRng.sample_iter(&Standard).take(bytes).collect::<Vec<u8>>();
+	let bytes = chars.div_ceil(4) * 3;
+	let mut rng = rand::rng();
+	let rv: Vec<u8> = (0..bytes).map(|_| rng.random()).collect();
 	let mut sstr = bcrypt_hash64_encode(&rv);
 	while sstr.len() > chars {
 	    sstr.pop();
@@ -189,11 +187,11 @@ mod random {
     }
 
     pub fn gen_salt_bytes(bytes: &mut [u8]) {
-	OsRng.fill(bytes);
+	rand::rng().fill(bytes);
     }
 
     pub fn vary_rounds(ceil: u32) -> u32 {
-	ceil - (random::<u32>() % (ceil / 4))
+	ceil - (rand::rng().random::<u32>() % (ceil / 4))
     }
 }
 
@@ -227,8 +225,9 @@ mod parse {
 	/// advance the position one byte after it. Drains the string.
 	fn take_until(&mut self, ac: u8) -> Option<Self::Elem>;
 
-	/// Returns `true` if the string is not drained.
-	fn at_end(&mut self) -> bool;
+	/// Returns `true` if the string is drained.
+	#[allow(dead_code)]
+	fn at_end(&self) -> bool;
     }
 
     pub struct HashSlice<'a> {
@@ -257,11 +256,7 @@ mod parse {
 	    } else {
 		let endp = self.pos + n;
 		self.pos = endp + if endp == self.len { 1 } else { 0 };
-		if let Ok(s) = str::from_utf8(&self.bp[sp..endp]) {
-		    Some(s)
-		} else {
-		    None
-		}
+		str::from_utf8(&self.bp[sp..endp]).ok()
 	    }
 	}
 
@@ -278,15 +273,11 @@ mod parse {
 	    }
 	    let oldp = self.pos;
 	    self.pos = sp + 1;
-	    if let Ok(s) = str::from_utf8(&self.bp[oldp..sp]) {
-		Some(s)
-	    } else {
-		None
-	    }
+	    str::from_utf8(&self.bp[oldp..sp]).ok()
 	}
 
-	fn at_end(&mut self) -> bool {
-	    self.take(0).unwrap_or("X") == "X"
+	fn at_end(&self) -> bool {
+	    self.pos > self.len
 	}
     }
 
@@ -313,7 +304,7 @@ mod parse {
 	    let mut hs = HashSlice::new("");
 	    assert_eq!(hs.take_until(b'$').unwrap(), "");
 	    assert_eq!(hs.at_end(), true);
-	    let mut hs = HashSlice::new("");
+	    let hs = HashSlice::new("");
 	    assert_eq!(hs.at_end(), false);
 	}
 

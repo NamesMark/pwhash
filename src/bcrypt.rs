@@ -38,12 +38,12 @@
 //! # Parameters
 //!
 //! * __Password length__: up to 72 characters. Longer passwords are
-//! truncated to the maximum length.
+//!   truncated to the maximum length.
 //!
 //! * __Salt length__: 16 random bytes, encoded as 22 Base64 characters.
 //!
 //! * __Cost__: logarithmic value between 4 and 31, inclusive. Increasing
-//! the value by 1 doubles the amount of work. The default is 8.
+//!   the value by 1 doubles the amount of work. The default is 8.
 //!
 //! # Hash Format
 //!
@@ -51,15 +51,15 @@
 //! **`$`**_`{variant}`_**`$`**_`{cost}`_**`$`**_`{salt}{checksum}`_, where:
 //!
 //! * _`{variant}`_ is one of **2a**, **2b**, or **2y**. The default is **2b**.
-//! The actual computation is the same for all three variants; the choice
-//! exists in order to retain compatibility with other software. See
-//! [`BcryptVariant`](enum.BcryptVariant.html) for details.
+//!   The actual computation is the same for all three variants; the choice
+//!   exists in order to retain compatibility with other software. See
+//!   [`BcryptVariant`](enum.BcryptVariant.html) for details.
 //!
 //! * _`{cost}`_ is a two-digit decimal cost value between 4 and 31. Values
-//! below 10 have a leading zero.
+//!   below 10 have a leading zero.
 //!
 //! * _`{salt}`_ is a 22-character Base64 encoding of the 16 bytes of salt. The
-//! salt must be exactly this long.
+//!   salt must be exactly this long.
 //!
 //! * _`{checksum}`_ is a 31-character Base64 encoding of the computed hash.
 
@@ -97,22 +97,22 @@ pub const DEFAULT_COST: u32 = 10;
 /// * **2** is the original OpenBSD version, which was very quickly replaced by
 ///
 /// * **2a**, which fixed a bug that caused passwords with repeated strings to
-/// produce the same hash as those with a single string ("abab" hashed the same
-/// as "ab".) This was the most widely used version, until
+///   produce the same hash as those with a single string ("abab" hashed the same
+///   as "ab".) This was the most widely used version, until
 ///
 /// * **2y**, produced by Openwall, which fixed a sign-extension bug that
-/// caused certain passwords with high-bit-set characters to produce weak keys.
-/// OpenBSD didn't have this bug, and their logic can transparently handle the
-/// **2y** hashes. The Openwall fix also introduced
+///   caused certain passwords with high-bit-set characters to produce weak keys.
+///   OpenBSD didn't have this bug, and their logic can transparently handle the
+///   **2y** hashes. The Openwall fix also introduced
 ///
 /// * **2x**, meant for unambiguously identifying pre-fix **2a** hashes as
-/// those produced by the buggy algorithm. OpenBSD doesn't treat **2x** hashes
-/// specially, which means that it won't be able to verify buggy hashes. Some
-/// time later, a wraparound bug was found in OpenBSD, leading to
+///   those produced by the buggy algorithm. OpenBSD doesn't treat **2x** hashes
+///   specially, which means that it won't be able to verify buggy hashes. Some
+///   time later, a wraparound bug was found in OpenBSD, leading to
 ///
 /// * **2b**, which fixed the bug. As the problem involved unrealistically long
-/// passwords, the bug was, fortunately, mostly theoretical. This variant is the
-/// current default in most implementations.
+///   passwords, the bug was, fortunately, mostly theoretical. This variant is the
+///   current default in most implementations.
 ///
 /// This crate has a single bcrypt algorithm implementation which is equivalent
 /// to the **2b** variant. It accepts **2a** and **2y** on input, and can
@@ -234,12 +234,10 @@ fn bcrypt(cost: u32, salt: &[u8], password: &[u8], output: &mut [u8]) {
 fn do_bcrypt(pass: &[u8], salt: &[u8], cost: u32, variant: BcryptVariant) -> Result<String> {
     let mut upd_pass = pass.iter().copied().chain(iter::repeat(0u8)).take(min(pass.len() + 1, MAX_PASS_LEN)).collect::<Vec<_>>();
     let mut output = [0u8; 24];
-    bcrypt(cost, &salt, &upd_pass[..], &mut output);
-    for b in &mut upd_pass {
-	*b = 0u8;
-    }
+    bcrypt(cost, salt, &upd_pass[..], &mut output);
+    upd_pass.fill(0u8);
     Ok(format!("${}${:02}${}{}", variant, cost,
-	bcrypt_hash64_encode(&salt), bcrypt_hash64_encode(&output[..23])))
+	bcrypt_hash64_encode(salt), bcrypt_hash64_encode(&output[..23])))
 }
 
 /// Hash a password with a randomly generated salt, default cost,
@@ -265,7 +263,7 @@ pub fn hash_with<'a, IBS, B>(param: IBS, pass: B) -> Result<String>
 {
     let bs = param.into_bcrypt_setup()?;
     let cost = if let Some(c) = bs.cost {
-	if c < MIN_COST || c > MAX_COST {
+	if !(MIN_COST..=MAX_COST).contains(&c) {
 	    return Err(Error::InvalidRounds);
 	}
 	c
@@ -274,8 +272,8 @@ pub fn hash_with<'a, IBS, B>(param: IBS, pass: B) -> Result<String>
 	v
     } else { DEFAULT_VARIANT };
     let mut salt_buf = [0u8; 16];
-    if bs.salt.is_some() {
-	bcrypt_hash64_decode(bs.salt.unwrap(), &mut salt_buf)?;
+    if let Some(salt) = bs.salt {
+	bcrypt_hash64_decode(salt, &mut salt_buf)?;
     } else {
 	random::gen_salt_bytes(&mut salt_buf);
     }

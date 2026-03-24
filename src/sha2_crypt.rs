@@ -69,7 +69,7 @@ pub fn sha2_crypt<D: Digest>(pass: &[u8], salt: &str, rounds: Option<u32>,
     }
     hash_b = dgst_b.finalize();
     let mut dgst_b = new_digest();
-    let mut seq_p = Vec::<u8>::with_capacity(((plen + dsize - 1) / dsize) * dsize);
+    let mut seq_p = Vec::<u8>::with_capacity(plen.div_ceil(dsize) * dsize);
     p = plen;
     while p > 0 {
 	seq_p.extend(&hash_b[..min(p, dsize)]);

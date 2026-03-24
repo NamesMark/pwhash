@@ -64,15 +64,15 @@ pub fn bcrypt_hash64_decode(enc: &str, decbuf: &mut [u8]) -> Result<()> {
 }
 
 pub fn bcrypt_hash64_encode(bs: &[u8]) -> String {
-    b_c_hash64_encode(bs, &BCRYPT_HASH64)
+    b_c_hash64_encode(bs, BCRYPT_HASH64)
 }
 
 pub fn crypt_hash64_encode(bs: &[u8]) -> String {
-    b_c_hash64_encode(bs, &CRYPT_HASH64)
+    b_c_hash64_encode(bs, CRYPT_HASH64)
 }
 
 fn b_c_hash64_encode(bs: &[u8], hs: &[u8]) -> String {
-    let ngroups = (bs.len() + 2) / 3;
+    let ngroups = bs.len().div_ceil(3);
     let mut out = String::with_capacity(ngroups * 4);
     for g in 0..ngroups {
 	let mut g_idx = g * 3;
@@ -100,7 +100,7 @@ const SHA1_HASH_LEN: usize = 20;
 
 pub fn sha1crypt_hash64_encode(bs: &[u8]) -> String {
     assert!(bs.len() >= SHA1_HASH_LEN);
-    let ngroups = (SHA1_HASH_LEN + 2) / 3;
+    let ngroups = SHA1_HASH_LEN.div_ceil(3);
     let mut out = String::with_capacity(ngroups * 4);
     for g in 0..ngroups {
 	let mut g_idx = g * 3;
@@ -120,7 +120,7 @@ pub fn sha1crypt_hash64_encode(bs: &[u8]) -> String {
 }
 
 pub fn md5_sha2_hash64_encode(bs: &[u8]) -> String {
-    let ngroups = (bs.len() + 2) / 3;
+    let ngroups = bs.len().div_ceil(3);
     let mut out = String::with_capacity(ngroups * 4);
     for g in 0..ngroups {
 	let mut g_idx = g * 3;
