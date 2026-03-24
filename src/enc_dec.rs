@@ -184,3 +184,60 @@ pub fn encode_val(mut val: u32, mut nhex: usize) -> String {
     }
     from_utf8(&val_arr[..vlen]).unwrap().to_owned()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bcrypt_hash64() {
+	for len in 1..=24 {
+	    let input: Vec<u8> = (0..len).map(|i| (i * 37 + 13) as u8).collect();
+	    let encoded = bcrypt_hash64_encode(&input);
+	    let mut decoded = vec![0u8; input.len()];
+	    bcrypt_hash64_decode(&encoded, &mut decoded).unwrap();
+	    assert_eq!(input, decoded, "roundtrip failed for len={}", len);
+	}
+    }
+
+    #[test]
+    fn bcrypt_hash64_encode_length() {
+	// len % 3 == 0: output is len/3 * 4
+	// len % 3 == 1: output is (len/3 + 1) * 4 - 2
+	// len % 3 == 2: output is (len/3 + 1) * 4 - 1
+	for len in 1..=24 {
+	    let input = vec![0xABu8; len];
+	    let encoded = bcrypt_hash64_encode(&input);
+	    let expected = match len % 3 {
+		0 => len / 3 * 4,
+		1 => (len / 3 + 1) * 4 - 2,
+		2 => (len / 3 + 1) * 4 - 1,
+		_ => unreachable!(),
+	    };
+	    assert_eq!(encoded.len(), expected, "wrong encoded length for input len={}", len);
+	}
+    }
+
+    #[test]
+    fn md5_sha2_hash64_encode_length() {
+	for len in 1..=24 {
+	    let input = vec![0xCDu8; len];
+	    let encoded = md5_sha2_hash64_encode(&input);
+	    let expected = match len % 3 {
+		0 => len / 3 * 4,
+		1 => (len / 3 + 1) * 4 - 2,
+		2 => (len / 3 + 1) * 4 - 1,
+		_ => unreachable!(),
+	    };
+	    assert_eq!(encoded.len(), expected, "wrong encoded length for input len={}", len);
+	}
+    }
+
+    #[test]
+    fn sha1crypt_hash64_encode_length() {
+	let input = [0x42u8; 20];
+	let encoded = sha1crypt_hash64_encode(&input);
+	// 20 bytes -> div_ceil(20, 3) = 7 groups -> 28 chars
+	assert_eq!(encoded.len(), 28);
+    }
+}
