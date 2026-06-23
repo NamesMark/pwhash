@@ -45,7 +45,7 @@
 //!
 //! * *`{checksum}`* is a 28-character Base64 encoding of the checksum.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha1::Sha1;
 use super::{Result, HashSetup, IntoHashSetup, consteq};
 use crate::enc_dec::{sha1crypt_hash64_encode, bcrypt_hash64_decode};

@@ -294,18 +294,18 @@ mod parse {
 	    assert_eq!(hs.take(22).expect("take"), "bvIG6Nmid91Mu9RcmmWZfO");
 	    let mut hs1 = HashSlice { bp: hs.bp, pos: hs.pos, len: hs.len };
 	    assert_eq!(hs.take_until(b'$').expect("take_until"), "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
-	    assert_eq!(hs.at_end(), true);
+	    assert!(hs.at_end());
 	    assert_eq!(hs1.take(31).expect("take"), "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
-	    assert_eq!(hs1.at_end(), true);
+	    assert!(hs1.at_end());
 	}
 
 	#[test]
 	fn empty_string() {
 	    let mut hs = HashSlice::new("");
 	    assert_eq!(hs.take_until(b'$').expect("take_until"), "");
-	    assert_eq!(hs.at_end(), true);
+	    assert!(hs.at_end());
 	    let hs = HashSlice::new("");
-	    assert_eq!(hs.at_end(), false);
+	    assert!(!hs.at_end());
 	}
 
 	#[test]
@@ -313,7 +313,7 @@ mod parse {
 	    let mut hs = HashSlice::new("$");
 	    assert_eq!(hs.take_until(b'$').expect("first take_until"), "");
 	    assert_eq!(hs.take_until(b'$').expect("second take_until"), "");
-	    assert_eq!(hs.at_end(), true);
+	    assert!(hs.at_end());
 	}
 
 	#[test]
@@ -321,7 +321,7 @@ mod parse {
 	    let mut hs = HashSlice::new("$");
 	    let _ = hs.take_until(b'$').expect("first take_until");
 	    assert_eq!(hs.take_until(b'$').expect("take_until"), "");
-	    assert_eq!(hs.at_end(), true);
+	    assert!(hs.at_end());
 	}
     }
 }

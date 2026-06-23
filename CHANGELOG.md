@@ -1,3 +1,8 @@
+## pw_hash v0.1.3, 2026-06-23
+
+* [internal] Update `md-5` to 0.11, `sha1` to 0.11, `sha2` to 0.11, `blowfish` to 0.10, `hmac` to 0.13.
+* [internal] Fix Clippy warnings: literal-bool asserts, manual loop counters.
+
 ## pw_hash v0.1.2, 2026-03-24
 
 * [internal] Update `rand` from 0.8 to 0.10, `sha2` from 0.10.8 to 0.10.9, edition to 2024.

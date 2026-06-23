@@ -1,6 +1,6 @@
 [package]
 name = "pw_hash"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Ivan Nejgebauer <inejge@gmail.com>, Mark Firman <markfirn@gmail.com>"]
 description = "A collection of password hashing routines in pure Rust. Fork of pwhash by inejge."
 homepage = "https://github.com/NamesMark/pwhash"
@@ -13,10 +13,10 @@ categories = ["cryptography", "authentication"]
 edition = "2024"
 
 [dependencies]
-md-5 = "0.10.6"
-sha1 = "0.10.6"
-sha2 = "0.10.9"
-blowfish = { version = "0.9.1", features = ["bcrypt"] }
-hmac = "0.12.1"
+md-5 = "0.11.0"
+sha1 = "0.11.0"
+sha2 = "0.11.0"
+blowfish = { version = "0.10.0", features = ["bcrypt"] }
+hmac = "0.13.0"
 byteorder = "1.5.0"
 rand = "0.10.0"
