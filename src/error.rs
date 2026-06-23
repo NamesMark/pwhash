@@ -9,8 +9,8 @@
 //!
 //! For simplicity, there's no provision for recording the cause of any
 //! errors except I/O errors when opening the system entropy source.
-use std::fmt;
 use std::error::Error as StdError;
+use std::fmt;
 
 /// Possible errors.
 #[derive(Debug)]

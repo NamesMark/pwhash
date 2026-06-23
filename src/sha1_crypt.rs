@@ -45,13 +45,13 @@
 //!
 //! * *`{checksum}`* is a 28-character Base64 encoding of the checksum.
 
+use super::{HashSetup, IntoHashSetup, Result, consteq};
+use crate::enc_dec::{bcrypt_hash64_decode, sha1crypt_hash64_encode};
+use crate::error::Error;
+use crate::parse::{self, HashIterator};
+use crate::random;
 use hmac::{Hmac, KeyInit, Mac};
 use sha1::Sha1;
-use super::{Result, HashSetup, IntoHashSetup, consteq};
-use crate::enc_dec::{sha1crypt_hash64_encode, bcrypt_hash64_decode};
-use crate::error::Error;
-use crate::random;
-use crate::parse::{self, HashIterator};
 
 const MIN_ROUNDS: u32 = 1;
 /// Default number of rounds.
@@ -73,7 +73,12 @@ fn do_sha1_crypt(pass: &[u8], salt: &str, rounds: u32) -> Result<String> {
         hmac.update(&result.into_bytes());
         result = hmac.finalize();
     }
-    Ok(format!("$sha1${}${}${}", rounds, salt, sha1crypt_hash64_encode(&result.into_bytes())))
+    Ok(format!(
+        "$sha1${}${}${}",
+        rounds,
+        salt,
+        sha1crypt_hash64_encode(&result.into_bytes())
+    ))
 }
 
 /// Hash a password with a randomly generated salt and the default
@@ -91,19 +96,24 @@ const MAGIC_LEN: usize = 6;
 fn parse_sha1_hash(hash: &str) -> Result<HashSetup<'_>> {
     let mut hs = parse::HashSlice::new(hash);
     if hs.take(MAGIC_LEN).unwrap_or("X") != "$sha1$" {
-	return Err(Error::InvalidHashString);
+        return Err(Error::InvalidHashString);
     }
     let rounds = if let Some(rounds_str) = hs.take_until(b'$') {
-	rounds_str.parse::<u32>().map_err(|_e| Error::InvalidRounds)?
+        rounds_str
+            .parse::<u32>()
+            .map_err(|_e| Error::InvalidRounds)?
     } else {
-	return Err(Error::InvalidHashString);
+        return Err(Error::InvalidHashString);
     };
     let salt = if let Some(salt) = hs.take_until(b'$') {
-	salt
+        salt
     } else {
-	return Err(Error::InvalidHashString);
+        return Err(Error::InvalidHashString);
     };
-    Ok(HashSetup { salt: Some(salt), rounds: Some(rounds) })
+    Ok(HashSetup {
+        salt: Some(salt),
+        rounds: Some(rounds),
+    })
 }
 
 /// Hash a password with user-provided parameters.
@@ -115,27 +125,31 @@ fn parse_sha1_hash(hash: &str) -> Result<HashSetup<'_>> {
 /// an invalid character, an error is returned. An out-of-range rounds value
 /// will also result in an error.
 pub fn hash_with<'a, IHS, B>(param: IHS, pass: B) -> Result<String>
-    where IHS: IntoHashSetup<'a>, B: AsRef<[u8]>
+where
+    IHS: IntoHashSetup<'a>,
+    B: AsRef<[u8]>,
 {
     let hs = IHS::into_hash_setup(param, parse_sha1_hash)?;
     let rounds = if let Some(r) = hs.rounds {
-	if r < MIN_ROUNDS {
-	    return Err(Error::InvalidRounds);
-	}
-	r
-    } else { random::vary_rounds(DEFAULT_ROUNDS) };
-    if let Some(salt) = hs.salt {
-	let salt = if salt.len() <= MAX_SALT_LEN {
-	    salt
-	} else if let Some(truncated_salt) = parse::HashSlice::new(salt).take(MAX_SALT_LEN) {
-	    truncated_salt
-	} else {
-	    return Err(Error::InvalidHashString);
-	};
-	do_sha1_crypt(pass.as_ref(), salt, rounds)
+        if r < MIN_ROUNDS {
+            return Err(Error::InvalidRounds);
+        }
+        r
     } else {
-	let salt = random::gen_salt_str(DEFAULT_SALT_LEN);
-	do_sha1_crypt(pass.as_ref(), &salt, rounds)
+        random::vary_rounds(DEFAULT_ROUNDS)
+    };
+    if let Some(salt) = hs.salt {
+        let salt = if salt.len() <= MAX_SALT_LEN {
+            salt
+        } else if let Some(truncated_salt) = parse::HashSlice::new(salt).take(MAX_SALT_LEN) {
+            truncated_salt
+        } else {
+            return Err(Error::InvalidHashString);
+        };
+        do_sha1_crypt(pass.as_ref(), salt, rounds)
+    } else {
+        let salt = random::gen_salt_str(DEFAULT_SALT_LEN);
+        do_sha1_crypt(pass.as_ref(), &salt, rounds)
     }
 }
 
@@ -150,15 +164,37 @@ mod tests {
 
     #[test]
     fn custom() {
-	assert_eq!(super::hash_with("$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a", "password").expect("hash_with"),
-	    "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a");
-	assert_eq!(super::hash_with(HashSetup { salt: Some("iVdJqfSE"), rounds: Some(19703) }, "password").expect("hash_with"),
-	    "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a");
+        assert_eq!(
+            super::hash_with(
+                "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a",
+                "password"
+            )
+            .expect("hash_with"),
+            "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a"
+        );
+        assert_eq!(
+            super::hash_with(
+                HashSetup {
+                    salt: Some("iVdJqfSE"),
+                    rounds: Some(19703)
+                },
+                "password"
+            )
+            .expect("hash_with"),
+            "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a"
+        );
     }
 
     #[test]
-    #[should_panic(expected="value: InvalidRounds")]
+    #[should_panic(expected = "value: InvalidRounds")]
     fn bad_rounds() {
-	let _ = super::hash_with(HashSetup { salt: Some("K0Ay"), rounds: Some(0) }, "password").unwrap();
+        let _ = super::hash_with(
+            HashSetup {
+                salt: Some("K0Ay"),
+                rounds: Some(0),
+            },
+            "password",
+        )
+        .unwrap();
     }
 }

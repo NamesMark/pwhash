@@ -82,17 +82,17 @@
 
 #![warn(missing_docs)]
 
-mod enc_dec;
-pub mod error;
-pub mod unix_crypt;
+pub mod bcrypt;
 pub mod bsdi_crypt;
 mod des_crypt;
-pub mod bcrypt;
-pub mod sha1_crypt;
+mod enc_dec;
+pub mod error;
 pub mod md5_crypt;
-mod sha2_crypt;
+pub mod sha1_crypt;
 pub mod sha256_crypt;
+mod sha2_crypt;
 pub mod sha512_crypt;
+pub mod unix_crypt;
 
 /// Type alias for the Result type.
 pub type Result<T> = std::result::Result<T, error::Error>;
@@ -119,13 +119,13 @@ pub trait IntoHashSetup<'a> {
 
 impl<'a> IntoHashSetup<'a> for &'a str {
     fn into_hash_setup(self, f: fn(&'a str) -> Result<HashSetup<'a>>) -> Result<HashSetup<'a>> {
-	f(self)
+        f(self)
     }
 }
 
 impl<'a> IntoHashSetup<'a> for HashSetup<'a> {
     fn into_hash_setup(self, _f: fn(&'a str) -> Result<HashSetup<'a>>) -> Result<HashSetup<'a>> {
-	Ok(self)
+        Ok(self)
     }
 }
 
@@ -149,49 +149,59 @@ pub trait FindNul {
 
 impl FindNul for str {
     fn nul_terminated_subslice(&self) -> &[u8] {
-        let nul_pos = self.as_bytes().windows(1).position(|window| window == [0u8]).unwrap_or(self.len());
+        let nul_pos = self
+            .as_bytes()
+            .windows(1)
+            .position(|window| window == [0u8])
+            .unwrap_or(self.len());
         &self.as_bytes()[..nul_pos]
     }
 }
 
 impl FindNul for [u8] {
     fn nul_terminated_subslice(&self) -> &[u8] {
-        let nul_pos = self.windows(1).position(|window| window == [0u8]).unwrap_or(self.len());
+        let nul_pos = self
+            .windows(1)
+            .position(|window| window == [0u8])
+            .unwrap_or(self.len());
         &self[..nul_pos]
     }
 }
 
 fn consteq(hash: &str, calchash: Result<String>) -> bool {
     let Ok(hstr) = calchash else {
-	return false;
+        return false;
     };
     if hash.len() != hstr.len() {
-	return false;
+        return false;
     }
-    0 == hash.bytes().zip(hstr.bytes()).fold(0, |xs, (h1, h2)| xs | h1 ^ h2)
+    0 == hash
+        .bytes()
+        .zip(hstr.bytes())
+        .fold(0, |xs, (h1, h2)| xs | h1 ^ h2)
 }
 
 mod random {
-    use rand::RngExt;
     use crate::enc_dec::bcrypt_hash64_encode;
+    use rand::RngExt;
 
     pub fn gen_salt_str(chars: usize) -> String {
-	let bytes = chars.div_ceil(4) * 3;
-	let mut rng = rand::rng();
-	let rv: Vec<u8> = (0..bytes).map(|_| rng.random()).collect();
-	let mut sstr = bcrypt_hash64_encode(&rv);
-	while sstr.len() > chars {
-	    sstr.pop();
-	}
-	sstr
+        let bytes = chars.div_ceil(4) * 3;
+        let mut rng = rand::rng();
+        let rv: Vec<u8> = (0..bytes).map(|_| rng.random()).collect();
+        let mut sstr = bcrypt_hash64_encode(&rv);
+        while sstr.len() > chars {
+            sstr.pop();
+        }
+        sstr
     }
 
     pub fn gen_salt_bytes(bytes: &mut [u8]) {
-	rand::rng().fill(bytes);
+        rand::rng().fill(bytes);
     }
 
     pub fn vary_rounds(ceil: u32) -> u32 {
-	ceil - (rand::rng().random::<u32>() % (ceil / 4))
+        ceil - (rand::rng().random::<u32>() % (ceil / 4))
     }
 }
 
@@ -204,125 +214,140 @@ mod parse {
     /// of a number of substrings. This trait enables extracting references to
     /// those substrings with the necessary semantics.
     pub trait HashIterator {
-	/// The substring that is returned by methods.
-	type Elem;
+        /// The substring that is returned by methods.
+        type Elem;
 
-	/// Extract a fixed-size substring.
-	///
-	/// There must be <i>at least</i> `n` ASCII characters remaining in the
-	/// string. If there are less, `None` is returned. If called with a non-zero
-	/// `n`, this method drains the string: if there are exactly `n` characters
-	/// remaining, subsequent calls will return `None`.
-	///
-	/// Calling `take` with `n` set to zero returns an empty string if the main
-	/// string is not drained.
-	fn take(&mut self, n: usize) -> Option<Self::Elem>;
+        /// Extract a fixed-size substring.
+        ///
+        /// There must be <i>at least</i> `n` ASCII characters remaining in the
+        /// string. If there are less, `None` is returned. If called with a non-zero
+        /// `n`, this method drains the string: if there are exactly `n` characters
+        /// remaining, subsequent calls will return `None`.
+        ///
+        /// Calling `take` with `n` set to zero returns an empty string if the main
+        /// string is not drained.
+        fn take(&mut self, n: usize) -> Option<Self::Elem>;
 
-	/// Extract a substring delimited by a byte.
-	///
-	/// Return a substring from the current position to the next occurrence of the
-	/// ASCII delimiter `ac` or the end of the string. If the delimiter is found,
-	/// advance the position one byte after it. Drains the string.
-	fn take_until(&mut self, ac: u8) -> Option<Self::Elem>;
+        /// Extract a substring delimited by a byte.
+        ///
+        /// Return a substring from the current position to the next occurrence of the
+        /// ASCII delimiter `ac` or the end of the string. If the delimiter is found,
+        /// advance the position one byte after it. Drains the string.
+        fn take_until(&mut self, ac: u8) -> Option<Self::Elem>;
 
-	/// Returns `true` if the string is drained.
-	#[allow(dead_code)]
-	fn at_end(&self) -> bool;
+        /// Returns `true` if the string is drained.
+        #[allow(dead_code)]
+        fn at_end(&self) -> bool;
     }
 
     pub struct HashSlice<'a> {
-	bp: &'a [u8],
-	len: usize,
-	pos: usize,
+        bp: &'a [u8],
+        len: usize,
+        pos: usize,
     }
 
     impl<'a> HashSlice<'a> {
-	pub fn new(hash: &'a str) -> HashSlice<'a> {
-	    HashSlice { bp: hash.as_bytes(), len: hash.len(), pos: 0 }
-	}
+        pub fn new(hash: &'a str) -> HashSlice<'a> {
+            HashSlice {
+                bp: hash.as_bytes(),
+                len: hash.len(),
+                pos: 0,
+            }
+        }
     }
 
     impl<'a> HashIterator for HashSlice<'a> {
-	type Elem = &'a str;
+        type Elem = &'a str;
 
-	fn take(&mut self, n: usize) -> Option<Self::Elem> {
-	    if self.pos > self.len {
-		return None;
-	    }
-	    let sp = self.pos;
-	    if sp + n > self.len {
-		self.pos = self.len + 1;
-		None
-	    } else {
-		let endp = self.pos + n;
-		self.pos = endp + if endp == self.len { 1 } else { 0 };
-		str::from_utf8(&self.bp[sp..endp]).ok()
-	    }
-	}
+        fn take(&mut self, n: usize) -> Option<Self::Elem> {
+            if self.pos > self.len {
+                return None;
+            }
+            let sp = self.pos;
+            if sp + n > self.len {
+                self.pos = self.len + 1;
+                None
+            } else {
+                let endp = self.pos + n;
+                self.pos = endp + if endp == self.len { 1 } else { 0 };
+                str::from_utf8(&self.bp[sp..endp]).ok()
+            }
+        }
 
-	fn take_until(&mut self, ac: u8) -> Option<Self::Elem> {
-	    if self.pos > self.len {
-		return None;
-	    }
-	    let mut sp = self.pos;
-	    while sp < self.len {
-		if self.bp[sp] == ac {
-		    break;
-		}
-		sp += 1;
-	    }
-	    let oldp = self.pos;
-	    self.pos = sp + 1;
-	    str::from_utf8(&self.bp[oldp..sp]).ok()
-	}
+        fn take_until(&mut self, ac: u8) -> Option<Self::Elem> {
+            if self.pos > self.len {
+                return None;
+            }
+            let mut sp = self.pos;
+            while sp < self.len {
+                if self.bp[sp] == ac {
+                    break;
+                }
+                sp += 1;
+            }
+            let oldp = self.pos;
+            self.pos = sp + 1;
+            str::from_utf8(&self.bp[oldp..sp]).ok()
+        }
 
-	fn at_end(&self) -> bool {
-	    self.pos > self.len
-	}
+        fn at_end(&self) -> bool {
+            self.pos > self.len
+        }
     }
 
     #[cfg(test)]
     mod tests {
-	use super::{HashSlice, HashIterator};
+        use super::{HashIterator, HashSlice};
 
-	#[test]
-	fn drain_string() {
-	    let mut hs = HashSlice::new("$2y$05$bvIG6Nmid91Mu9RcmmWZfO5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
-	    assert_eq!(hs.take_until(b'$').expect("take_until"), "");
-	    assert_eq!(hs.take_until(b'$').expect("take_until"), "2y");
-	    assert_eq!(hs.take_until(b'$').expect("take_until"), "05");
-	    assert_eq!(hs.take(22).expect("take"), "bvIG6Nmid91Mu9RcmmWZfO");
-	    let mut hs1 = HashSlice { bp: hs.bp, pos: hs.pos, len: hs.len };
-	    assert_eq!(hs.take_until(b'$').expect("take_until"), "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
-	    assert!(hs.at_end());
-	    assert_eq!(hs1.take(31).expect("take"), "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
-	    assert!(hs1.at_end());
-	}
+        #[test]
+        fn drain_string() {
+            let mut hs =
+                HashSlice::new("$2y$05$bvIG6Nmid91Mu9RcmmWZfO5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe");
+            assert_eq!(hs.take_until(b'$').expect("take_until"), "");
+            assert_eq!(hs.take_until(b'$').expect("take_until"), "2y");
+            assert_eq!(hs.take_until(b'$').expect("take_until"), "05");
+            assert_eq!(hs.take(22).expect("take"), "bvIG6Nmid91Mu9RcmmWZfO");
+            let mut hs1 = HashSlice {
+                bp: hs.bp,
+                pos: hs.pos,
+                len: hs.len,
+            };
+            assert_eq!(
+                hs.take_until(b'$').expect("take_until"),
+                "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe"
+            );
+            assert!(hs.at_end());
+            assert_eq!(
+                hs1.take(31).expect("take"),
+                "5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe"
+            );
+            assert!(hs1.at_end());
+        }
 
-	#[test]
-	fn empty_string() {
-	    let mut hs = HashSlice::new("");
-	    assert_eq!(hs.take_until(b'$').expect("take_until"), "");
-	    assert!(hs.at_end());
-	    let hs = HashSlice::new("");
-	    assert!(!hs.at_end());
-	}
+        #[test]
+        fn empty_string() {
+            let mut hs = HashSlice::new("");
+            assert_eq!(hs.take_until(b'$').expect("take_until"), "");
+            assert!(hs.at_end());
+            let hs = HashSlice::new("");
+            assert!(!hs.at_end());
+        }
 
-	#[test]
-	fn empty_elements() {
-	    let mut hs = HashSlice::new("$");
-	    assert_eq!(hs.take_until(b'$').expect("first take_until"), "");
-	    assert_eq!(hs.take_until(b'$').expect("second take_until"), "");
-	    assert!(hs.at_end());
-	}
+        #[test]
+        fn empty_elements() {
+            let mut hs = HashSlice::new("$");
+            assert_eq!(hs.take_until(b'$').expect("first take_until"), "");
+            assert_eq!(hs.take_until(b'$').expect("second take_until"), "");
+            assert!(hs.at_end());
+        }
 
-	#[test]
-	fn combined_take() {
-	    let mut hs = HashSlice::new("$");
-	    let _ = hs.take_until(b'$').expect("first take_until");
-	    assert_eq!(hs.take_until(b'$').expect("take_until"), "");
-	    assert!(hs.at_end());
-	}
+        #[test]
+        fn combined_take() {
+            let mut hs = HashSlice::new("$");
+            let _ = hs.take_until(b'$').expect("first take_until");
+            assert_eq!(hs.take_until(b'$').expect("take_until"), "");
+            assert!(hs.at_end());
+        }
     }
 }
 
@@ -333,40 +358,47 @@ pub mod unix {
     //! the functions in this module can be used to verify or re-calculate the
     //! hash.
     use super::{Result, consteq};
-    use crate::parse::{self, HashIterator};
     use crate::error::Error;
-    use crate::{bsdi_crypt, md5_crypt, bcrypt, sha1_crypt, sha256_crypt, sha512_crypt, unix_crypt};
+    use crate::parse::{self, HashIterator};
+    use crate::{
+        bcrypt, bsdi_crypt, md5_crypt, sha1_crypt, sha256_crypt, sha512_crypt, unix_crypt,
+    };
 
     /// A Unix __crypt__(3) work-alike.
     pub fn crypt<B: AsRef<[u8]>>(pass: B, hash: &str) -> Result<String> {
-	let mut hs = parse::HashSlice::new(hash);
-	#[allow(deprecated)]
-	match hs.take(1).unwrap_or("X") {
-	    "_" => bsdi_crypt::hash_with(hash, pass),
-	    "$" => match hs.take_until(b'$').unwrap_or("X") {
-		"1" => md5_crypt::hash_with(hash, pass),
-		"2a" | "2b" | "2y" => bcrypt::hash_with(hash, pass),
-		"sha1" => sha1_crypt::hash_with(hash, pass),
-		"5" => sha256_crypt::hash_with(hash, pass),
-		"6" => sha512_crypt::hash_with(hash, pass),
-		_ => Err(Error::InvalidHashString),
-	    },
-	    _ => unix_crypt::hash_with(hash, pass)
-	}
+        let mut hs = parse::HashSlice::new(hash);
+        #[allow(deprecated)]
+        match hs.take(1).unwrap_or("X") {
+            "_" => bsdi_crypt::hash_with(hash, pass),
+            "$" => match hs.take_until(b'$').unwrap_or("X") {
+                "1" => md5_crypt::hash_with(hash, pass),
+                "2a" | "2b" | "2y" => bcrypt::hash_with(hash, pass),
+                "sha1" => sha1_crypt::hash_with(hash, pass),
+                "5" => sha256_crypt::hash_with(hash, pass),
+                "6" => sha512_crypt::hash_with(hash, pass),
+                _ => Err(Error::InvalidHashString),
+            },
+            _ => unix_crypt::hash_with(hash, pass),
+        }
     }
 
     /// Verify that the hash corresponds to a password, using hash format recognition.
     pub fn verify<B: AsRef<[u8]>>(pass: B, hash: &str) -> bool {
-	consteq(hash, crypt(pass, hash))
+        consteq(hash, crypt(pass, hash))
     }
 
     #[cfg(test)]
     mod tests {
-	#[test]
-	fn crypt_recognized() {
-	    assert_eq!(super::crypt("password", "$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0").expect("crypt"),
-		"$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0");
-	    assert_eq!(super::crypt("test", "aZGJuE6EXrjEE").expect("crypt"), "aZGJuE6EXrjEE");
-	}
+        #[test]
+        fn crypt_recognized() {
+            assert_eq!(
+                super::crypt("password", "$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0").expect("crypt"),
+                "$1$5pZSV9va$azfrPr6af3Fc7dLblQXVa0"
+            );
+            assert_eq!(
+                super::crypt("test", "aZGJuE6EXrjEE").expect("crypt"),
+                "aZGJuE6EXrjEE"
+            );
+        }
     }
 }

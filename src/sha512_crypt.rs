@@ -48,15 +48,15 @@
 //! The format __`$6$`__*`{salt}`*__$__*`{checksum}`* can be used if
 //! the default number of rounds is chosen.
 
-use sha2::Sha512;
-use super::{Result, HashSetup, IntoHashSetup, consteq};
+use super::{HashSetup, IntoHashSetup, Result, consteq};
 use crate::random;
-use crate::sha2_crypt::{sha2_crypt, parse_sha2_hash, sha2_hash_with};
+use crate::sha2_crypt::{parse_sha2_hash, sha2_crypt, sha2_hash_with};
+use sha2::Sha512;
 
-pub use crate::sha2_crypt::MIN_ROUNDS;
-pub use crate::sha2_crypt::MAX_ROUNDS;
 pub use crate::sha2_crypt::DEFAULT_ROUNDS;
+pub use crate::sha2_crypt::MAX_ROUNDS;
 pub use crate::sha2_crypt::MAX_SALT_LEN;
+pub use crate::sha2_crypt::MIN_ROUNDS;
 
 const SHA512_MAGIC: &str = "$6$";
 const SHA512_TRANSPOSE: &[u8] = b"\x2a\x15\x00\x01\x2b\x16\x17\x02\x2c\x2d\x18\x03\x04\x2e\x19\x1a\
@@ -65,7 +65,14 @@ const SHA512_TRANSPOSE: &[u8] = b"\x2a\x15\x00\x01\x2b\x16\x17\x02\x2c\x2d\x18\x
 				  \x10\x3a\x25\x26\x11\x3b\x3c\x27\x12\x13\x3d\x28\x29\x14\x3e\x3f";
 
 fn do_sha512_crypt(pass: &[u8], salt: &str, rounds: Option<u32>) -> Result<String> {
-    sha2_crypt(pass, salt, rounds, Sha512::default, SHA512_TRANSPOSE, SHA512_MAGIC)
+    sha2_crypt(
+        pass,
+        salt,
+        rounds,
+        Sha512::default,
+        SHA512_TRANSPOSE,
+        SHA512_MAGIC,
+    )
 }
 
 /// Hash a password with a randomly generated salt and the default
@@ -90,9 +97,15 @@ fn parse_sha512_hash(hash: &str) -> Result<HashSetup<'_>> {
 /// an invalid character, an error is returned. An out-of-range rounds value
 /// will be coerced into the allowed range.
 pub fn hash_with<'a, IHS, B>(param: IHS, pass: B) -> Result<String>
-    where IHS: IntoHashSetup<'a>, B: AsRef<[u8]>
+where
+    IHS: IntoHashSetup<'a>,
+    B: AsRef<[u8]>,
 {
-    sha2_hash_with(IHS::into_hash_setup(param, parse_sha512_hash)?, pass.as_ref(), do_sha512_crypt)
+    sha2_hash_with(
+        IHS::into_hash_setup(param, parse_sha512_hash)?,
+        pass.as_ref(),
+        do_sha512_crypt,
+    )
 }
 
 /// Verify that the hash corresponds to a password.
@@ -106,22 +119,41 @@ mod tests {
 
     #[test]
     fn custom() {
-	assert_eq!(super::hash_with(
-		   "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
-		    uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1", "test").expect("hash_with"),
-	    "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
-	     uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1");
-	assert_eq!(super::hash_with(HashSetup { salt: Some("G/gkPn17kHYo0gTF"), rounds: Some(11531) }, "test").expect("hash_with"),
-	    "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
-	     uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1");
+        assert_eq!(
+            super::hash_with(
+                "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
+		    uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1",
+                "test"
+            )
+            .expect("hash_with"),
+            "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
+	     uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1"
+        );
+        assert_eq!(
+            super::hash_with(
+                HashSetup {
+                    salt: Some("G/gkPn17kHYo0gTF"),
+                    rounds: Some(11531)
+                },
+                "test"
+            )
+            .expect("hash_with"),
+            "$6$rounds=11531$G/gkPn17kHYo0gTF$Kq.uZBHlSBXyzsOJXtxJruOOH4yc0Is13\
+	     uY7yK0PvAvXxbvc1w8DO1RzREMhKsc82K/Jh8OquV8FZUlreYPJk1"
+        );
     }
 
     #[test]
     fn implicit_dflt_rounds() {
-	assert_eq!(super::hash_with(
-		   "$6$G/gkPn17kHYo0gTF$xhDFU0QYExdMH2ghOWKrrVtu1BuTpNMSJURCXk43.\
-		    EYekmK8iwV6RNqftUUC8mqDel1J7m3JEbUkbu4YyqSyv/", "test").expect("hash_with"),
-	    "$6$G/gkPn17kHYo0gTF$xhDFU0QYExdMH2ghOWKrrVtu1BuTpNMSJURCXk43.\
-	     EYekmK8iwV6RNqftUUC8mqDel1J7m3JEbUkbu4YyqSyv/");
+        assert_eq!(
+            super::hash_with(
+                "$6$G/gkPn17kHYo0gTF$xhDFU0QYExdMH2ghOWKrrVtu1BuTpNMSJURCXk43.\
+		    EYekmK8iwV6RNqftUUC8mqDel1J7m3JEbUkbu4YyqSyv/",
+                "test"
+            )
+            .expect("hash_with"),
+            "$6$G/gkPn17kHYo0gTF$xhDFU0QYExdMH2ghOWKrrVtu1BuTpNMSJURCXk43.\
+	     EYekmK8iwV6RNqftUUC8mqDel1J7m3JEbUkbu4YyqSyv/"
+        );
     }
 }

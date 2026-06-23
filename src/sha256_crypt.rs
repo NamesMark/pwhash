@@ -47,22 +47,29 @@
 //! The format __`$5$`__*`{salt}`*__$__*`{checksum}`* can be used if
 //! the default number of rounds is chosen.
 
-use sha2::Sha256;
-use super::{Result, HashSetup, IntoHashSetup, consteq};
+use super::{HashSetup, IntoHashSetup, Result, consteq};
 use crate::random;
-use crate::sha2_crypt::{sha2_crypt, parse_sha2_hash, sha2_hash_with};
+use crate::sha2_crypt::{parse_sha2_hash, sha2_crypt, sha2_hash_with};
+use sha2::Sha256;
 
-pub use crate::sha2_crypt::MIN_ROUNDS;
-pub use crate::sha2_crypt::MAX_ROUNDS;
 pub use crate::sha2_crypt::DEFAULT_ROUNDS;
+pub use crate::sha2_crypt::MAX_ROUNDS;
 pub use crate::sha2_crypt::MAX_SALT_LEN;
+pub use crate::sha2_crypt::MIN_ROUNDS;
 
 const SHA256_MAGIC: &str = "$5$";
 const SHA256_TRANSPOSE: &[u8] = b"\x14\x0a\x00\x0b\x01\x15\x02\x16\x0c\x17\x0d\x03\x0e\x04\x18\x05\
 					  \x19\x0f\x1a\x10\x06\x11\x07\x1b\x08\x1c\x12\x1d\x13\x09\x1e\x1f";
 
 fn do_sha256_crypt(pass: &[u8], salt: &str, rounds: Option<u32>) -> Result<String> {
-    sha2_crypt(pass, salt, rounds, Sha256::default, SHA256_TRANSPOSE, SHA256_MAGIC)
+    sha2_crypt(
+        pass,
+        salt,
+        rounds,
+        Sha256::default,
+        SHA256_TRANSPOSE,
+        SHA256_MAGIC,
+    )
 }
 
 /// Hash a password with a randomly generated salt and the default
@@ -70,7 +77,7 @@ fn do_sha256_crypt(pass: &[u8], salt: &str, rounds: Option<u32>) -> Result<Strin
 ///
 /// An error is returned if the system random number generator cannot
 /// be opened.
-#[deprecated(since="0.2.0", note="don't use this algorithm for new passwords")]
+#[deprecated(since = "0.2.0", note = "don't use this algorithm for new passwords")]
 pub fn hash<B: AsRef<[u8]>>(pass: B) -> Result<String> {
     let saltstr = random::gen_salt_str(MAX_SALT_LEN);
     do_sha256_crypt(pass.as_ref(), &saltstr, None)
@@ -87,11 +94,17 @@ fn parse_sha256_hash(hash: &str) -> Result<HashSetup<'_>> {
 /// If the salt is too long, it is truncated to maximum length. If it contains
 /// an invalid character, an error is returned. An out-of-range rounds value
 /// will be coerced into the allowed range.
-#[deprecated(since="0.2.0", note="don't use this algorithm for new passwords")]
+#[deprecated(since = "0.2.0", note = "don't use this algorithm for new passwords")]
 pub fn hash_with<'a, IHS, B>(param: IHS, pass: B) -> Result<String>
-    where IHS: IntoHashSetup<'a>, B: AsRef<[u8]>
+where
+    IHS: IntoHashSetup<'a>,
+    B: AsRef<[u8]>,
 {
-    sha2_hash_with(IHS::into_hash_setup(param, parse_sha256_hash)?, pass.as_ref(), do_sha256_crypt)
+    sha2_hash_with(
+        IHS::into_hash_setup(param, parse_sha256_hash)?,
+        pass.as_ref(),
+        do_sha256_crypt,
+    )
 }
 
 /// Verify that the hash corresponds to a password.
@@ -107,18 +120,37 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn custom() {
-	assert_eq!(super::hash_with(
-		   "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1", "test").expect("hash_with"),
-	    "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1");
-	assert_eq!(super::hash_with(HashSetup { salt: Some("WH1ABM5sKhxbkgCK"), rounds: Some(11858) }, "test").expect("hash_with"),
-	    "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1");
+        assert_eq!(
+            super::hash_with(
+                "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1",
+                "test"
+            )
+            .expect("hash_with"),
+            "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1"
+        );
+        assert_eq!(
+            super::hash_with(
+                HashSetup {
+                    salt: Some("WH1ABM5sKhxbkgCK"),
+                    rounds: Some(11858)
+                },
+                "test"
+            )
+            .expect("hash_with"),
+            "$5$rounds=11858$WH1ABM5sKhxbkgCK$aTQsjPkz0rBsH3lQlJxw9HDTDXPKBxC0LlVeV69P.t1"
+        );
     }
 
     #[test]
     #[allow(deprecated)]
     fn implicit_dflt_rounds() {
-	assert_eq!(super::hash_with(
-		   "$5$WH1ABM5sKhxbkgCK$sOnTVjQn1Y3EWibd8gWqqJqjH.KaFrxJE5rijqxcPp7", "test").expect("hash_with"),
-	    "$5$WH1ABM5sKhxbkgCK$sOnTVjQn1Y3EWibd8gWqqJqjH.KaFrxJE5rijqxcPp7");
+        assert_eq!(
+            super::hash_with(
+                "$5$WH1ABM5sKhxbkgCK$sOnTVjQn1Y3EWibd8gWqqJqjH.KaFrxJE5rijqxcPp7",
+                "test"
+            )
+            .expect("hash_with"),
+            "$5$WH1ABM5sKhxbkgCK$sOnTVjQn1Y3EWibd8gWqqJqjH.KaFrxJE5rijqxcPp7"
+        );
     }
 }

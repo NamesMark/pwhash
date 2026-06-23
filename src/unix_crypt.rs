@@ -50,7 +50,7 @@ pub const SALT_LEN: usize = 2;
 ///
 /// An error is returned if the system random number generator cannot
 /// be opened.
-#[deprecated(since="0.2.0", note="don't use this algorithm for new passwords")]
+#[deprecated(since = "0.2.0", note = "don't use this algorithm for new passwords")]
 pub fn hash<B: AsRef<[u8]>>(pass: B) -> Result<String> {
     let saltstr = random::gen_salt_str(SALT_LEN);
     unix_crypt(pass.as_ref(), &saltstr)
@@ -60,7 +60,7 @@ pub fn hash<B: AsRef<[u8]>>(pass: B) -> Result<String> {
 ///
 /// An error is returned if the salt is too short or contains an invalid
 /// character.
-#[deprecated(since="0.2.0", note="don't use this algorithm for new passwords")]
+#[deprecated(since = "0.2.0", note = "don't use this algorithm for new passwords")]
 pub fn hash_with<B: AsRef<[u8]>>(salt: &str, pass: B) -> Result<String> {
     unix_crypt(pass.as_ref(), salt)
 }
@@ -75,23 +75,26 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn custom() {
-	assert_eq!("aZGJuE6EXrjEE", super::hash_with("aZ", "test").expect("hash_with"));
-	assert!(super::verify("test", "aZGJuE6EXrjEE"));
-	assert!(!super::verify("test", "aZFJuE6EXrjEE"));
-	assert!(!super::verify("test", "!!"));
+        assert_eq!(
+            "aZGJuE6EXrjEE",
+            super::hash_with("aZ", "test").expect("hash_with")
+        );
+        assert!(super::verify("test", "aZGJuE6EXrjEE"));
+        assert!(!super::verify("test", "aZFJuE6EXrjEE"));
+        assert!(!super::verify("test", "!!"));
     }
 
     #[test]
     #[allow(deprecated)]
-    #[should_panic(expected="value: EncodingError")]
+    #[should_panic(expected = "value: EncodingError")]
     fn bad_salt_chars() {
-	let _ = super::hash_with("!!", "test").unwrap();
+        let _ = super::hash_with("!!", "test").unwrap();
     }
 
     #[test]
     #[allow(deprecated)]
-    #[should_panic(expected="value: InsufficientLength")]
+    #[should_panic(expected = "value: InsufficientLength")]
     fn short_salt() {
-	let _ = super::hash_with("Z", "test").unwrap();
+        let _ = super::hash_with("Z", "test").unwrap();
     }
 }

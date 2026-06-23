@@ -41,12 +41,12 @@
 //!
 //! * *`{checksum}`* is a 11-character Base64 encoding of the checksum.
 
-use super::{Result, HashSetup, IntoHashSetup, consteq};
+use super::{HashSetup, IntoHashSetup, Result, consteq};
 use crate::des_crypt::bsdi_crypt;
 use crate::enc_dec::decode_val;
 use crate::error::Error;
-use crate::random;
 use crate::parse::{self, HashIterator};
+use crate::random;
 
 const MIN_ROUNDS: u32 = 1;
 const MAX_ROUNDS: u32 = (1 << 24) - 1;
@@ -63,7 +63,7 @@ const ROUNDS_LEN: usize = 4;
 ///
 /// An error is returned if the system random number generator cannot
 /// be opened.
-#[deprecated(since="0.2.0", note="don't use this algorithm for new passwords")]
+#[deprecated(since = "0.2.0", note = "don't use this algorithm for new passwords")]
 pub fn hash<B: AsRef<[u8]>>(pass: B) -> Result<String> {
     let saltstr = random::gen_salt_str(SALT_LEN);
     bsdi_crypt(pass.as_ref(), &saltstr, DEFAULT_ROUNDS)
@@ -72,19 +72,22 @@ pub fn hash<B: AsRef<[u8]>>(pass: B) -> Result<String> {
 fn parse_bsdi_hash(hash: &str) -> Result<HashSetup<'_>> {
     let mut hs = parse::HashSlice::new(hash);
     if hs.take(1).unwrap_or("X") != "_" {
-	return Err(Error::InvalidHashString);
+        return Err(Error::InvalidHashString);
     }
     let rounds = if let Some(rounds_enc) = hs.take(ROUNDS_LEN) {
-	decode_val(rounds_enc, SALT_LEN)?
+        decode_val(rounds_enc, SALT_LEN)?
     } else {
-	return Err(Error::InvalidHashString);
+        return Err(Error::InvalidHashString);
     };
     let salt = if let Some(salt) = hs.take(SALT_LEN) {
-	salt
+        salt
     } else {
-	return Err(Error::InvalidHashString);
+        return Err(Error::InvalidHashString);
     };
-    Ok(HashSetup { salt: Some(salt), rounds: Some(rounds) })
+    Ok(HashSetup {
+        salt: Some(salt),
+        rounds: Some(rounds),
+    })
 }
 
 /// Hash a password with user-provided parameters.
@@ -93,22 +96,26 @@ fn parse_bsdi_hash(hash: &str) -> Result<HashSetup<'_>> {
 /// format. The number of rounds and the salt are parsed out of that value.
 /// An error is returned if the salt is too short or contains an invalid
 /// character. An out-of-range rounds value will also result in an error.
-#[deprecated(since="0.2.0", note="don't use this algorithm for new passwords")]
+#[deprecated(since = "0.2.0", note = "don't use this algorithm for new passwords")]
 pub fn hash_with<'a, IHS, B>(param: IHS, pass: B) -> Result<String>
-    where IHS: IntoHashSetup<'a>, B: AsRef<[u8]>
+where
+    IHS: IntoHashSetup<'a>,
+    B: AsRef<[u8]>,
 {
     let hs = IHS::into_hash_setup(param, parse_bsdi_hash)?;
     let rounds = if let Some(r) = hs.rounds {
-	if !(MIN_ROUNDS..=MAX_ROUNDS).contains(&r) {
-	    return Err(Error::InvalidRounds);
-	}
-	r
-    } else { DEFAULT_ROUNDS };
-    if let Some(salt) = hs.salt {
-	bsdi_crypt(pass.as_ref(), salt, rounds)
+        if !(MIN_ROUNDS..=MAX_ROUNDS).contains(&r) {
+            return Err(Error::InvalidRounds);
+        }
+        r
     } else {
-	let saltstr = random::gen_salt_str(SALT_LEN);
-	bsdi_crypt(pass.as_ref(), &saltstr, rounds)
+        DEFAULT_ROUNDS
+    };
+    if let Some(salt) = hs.salt {
+        bsdi_crypt(pass.as_ref(), salt, rounds)
+    } else {
+        let saltstr = random::gen_salt_str(SALT_LEN);
+        bsdi_crypt(pass.as_ref(), &saltstr, rounds)
     }
 }
 
@@ -125,15 +132,34 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn custom() {
-	assert_eq!(super::hash_with(HashSetup { salt: Some("K0Ay"), rounds: None }, "password").expect("hash_with"),
-	    "_Gl/.K0Ay.aosctsbJ1k");
-	assert_eq!(super::hash_with("_Gl/.K0Ay.aosctsbJ1k", "password").expect("hash_with"), "_Gl/.K0Ay.aosctsbJ1k");
+        assert_eq!(
+            super::hash_with(
+                HashSetup {
+                    salt: Some("K0Ay"),
+                    rounds: None
+                },
+                "password"
+            )
+            .expect("hash_with"),
+            "_Gl/.K0Ay.aosctsbJ1k"
+        );
+        assert_eq!(
+            super::hash_with("_Gl/.K0Ay.aosctsbJ1k", "password").expect("hash_with"),
+            "_Gl/.K0Ay.aosctsbJ1k"
+        );
     }
 
     #[test]
     #[allow(deprecated)]
-    #[should_panic(expected="value: InvalidRounds")]
+    #[should_panic(expected = "value: InvalidRounds")]
     fn bad_rounds() {
-	let _ = super::hash_with(HashSetup { salt: Some("K0Ay"), rounds: Some(0) }, "password").unwrap();
+        let _ = super::hash_with(
+            HashSetup {
+                salt: Some("K0Ay"),
+                rounds: Some(0),
+            },
+            "password",
+        )
+        .unwrap();
     }
 }

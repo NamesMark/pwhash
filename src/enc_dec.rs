@@ -7,12 +7,13 @@
 // modified, or distributed except according to the terms of this
 // license.
 
-use crate::error::Error;
 use super::Result;
+use crate::error::Error;
 
 const CRYPT_HASH64: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-const CRYPT_HASH64_ENC_MAP: &[u8] = b"\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x00\x01\
+const CRYPT_HASH64_ENC_MAP: &[u8] =
+    b"\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x00\x01\
 				      \x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x40\x40\x40\x40\x40\x40\
 				      \x40\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\
 				      \x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x40\x40\x40\x40\x40\
@@ -21,7 +22,8 @@ const CRYPT_HASH64_ENC_MAP: &[u8] = b"\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x
 
 const BCRYPT_HASH64: &[u8] = b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-const BCRYPT_HASH64_ENC_MAP: &[u8] = b"\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x00\x01\
+const BCRYPT_HASH64_ENC_MAP: &[u8] =
+    b"\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x40\x00\x01\
 				       \x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40\x40\x40\x40\x40\x40\
 				       \x40\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\
 				       \x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x40\x40\x40\x40\x40\
@@ -33,30 +35,30 @@ pub fn bcrypt_hash64_decode(enc: &str, decbuf: &mut [u8]) -> Result<()> {
     let mut cpos = 0;
     let mut dec_idx = 0;
     for b in enc.chars() {
-	let b = b as u32 - 0x20;
-	if b > 0x60 {
-	    return Err(Error::EncodingError);
-	}
-	let dec = BCRYPT_HASH64_ENC_MAP[b as usize];
-	if dec == 64 {
-	    return Err(Error::EncodingError);
-	}
-	if cpos == 0 {
-	    cbuild = dec;
-	} else {
-	    cbuild <<= cpos;
-	    cbuild |= dec >> (6 - cpos);
-	    decbuf[dec_idx] = cbuild;
-	    dec_idx += 1;
-	    if dec_idx == decbuf.len() {
-		break;
-	    }
-	    cbuild = dec & (0x3F >> cpos);
-	}
-	cpos += 2;
-	if cpos > 6 {
-	    cpos = 0;
-	}
+        let b = b as u32 - 0x20;
+        if b > 0x60 {
+            return Err(Error::EncodingError);
+        }
+        let dec = BCRYPT_HASH64_ENC_MAP[b as usize];
+        if dec == 64 {
+            return Err(Error::EncodingError);
+        }
+        if cpos == 0 {
+            cbuild = dec;
+        } else {
+            cbuild <<= cpos;
+            cbuild |= dec >> (6 - cpos);
+            decbuf[dec_idx] = cbuild;
+            dec_idx += 1;
+            if dec_idx == decbuf.len() {
+                break;
+            }
+            cbuild = dec & (0x3F >> cpos);
+        }
+        cpos += 2;
+        if cpos > 6 {
+            cpos = 0;
+        }
     }
     Ok(())
 }
@@ -73,22 +75,27 @@ fn b_c_hash64_encode(bs: &[u8], hs: &[u8]) -> String {
     let ngroups = bs.len().div_ceil(3);
     let mut out = String::with_capacity(ngroups * 4);
     for g in 0..ngroups {
-	let mut enc = 0u32;
-	for offset in 0..3 {
-	    let g_idx = g * 3 + offset;
-	    let b = (if g_idx < bs.len() { bs[g_idx] } else { 0 }) as u32;
-	    enc <<= 8;
-	    enc |= b;
-	}
-	for _ in 0..4 {
-	    out.push(hs[((enc >> 18) & 0x3F) as usize] as char);
-	    enc <<= 6;
-	}
+        let mut enc = 0u32;
+        for offset in 0..3 {
+            let g_idx = g * 3 + offset;
+            let b = (if g_idx < bs.len() { bs[g_idx] } else { 0 }) as u32;
+            enc <<= 8;
+            enc |= b;
+        }
+        for _ in 0..4 {
+            out.push(hs[((enc >> 18) & 0x3F) as usize] as char);
+            enc <<= 6;
+        }
     }
     match bs.len() % 3 {
-	1 => { out.pop(); out.pop(); },
-	2 => { out.pop(); },
-	_ => (),
+        1 => {
+            out.pop();
+            out.pop();
+        }
+        2 => {
+            out.pop();
+        }
+        _ => (),
     }
     out
 }
@@ -100,17 +107,21 @@ pub fn sha1crypt_hash64_encode(bs: &[u8]) -> String {
     let ngroups = SHA1_HASH_LEN.div_ceil(3);
     let mut out = String::with_capacity(ngroups * 4);
     for g in 0..ngroups {
-	let mut enc: u32 = 0;
-	for offset in 0..3 {
-	    let g_idx = g * 3 + offset;
-	    let b = (if g_idx < SHA1_HASH_LEN { bs[g_idx] } else { bs[0] }) as u32;
-	    enc <<= 8;
-	    enc |= b;
-	}
-	for _ in 0..4 {
-	    out.push(CRYPT_HASH64[(enc & 0x3F) as usize] as char);
-	    enc >>= 6;
-	}
+        let mut enc: u32 = 0;
+        for offset in 0..3 {
+            let g_idx = g * 3 + offset;
+            let b = (if g_idx < SHA1_HASH_LEN {
+                bs[g_idx]
+            } else {
+                bs[0]
+            }) as u32;
+            enc <<= 8;
+            enc |= b;
+        }
+        for _ in 0..4 {
+            out.push(CRYPT_HASH64[(enc & 0x3F) as usize] as char);
+            enc >>= 6;
+        }
     }
     out
 }
@@ -119,22 +130,27 @@ pub fn md5_sha2_hash64_encode(bs: &[u8]) -> String {
     let ngroups = bs.len().div_ceil(3);
     let mut out = String::with_capacity(ngroups * 4);
     for g in 0..ngroups {
-	let mut enc = 0u32;
-	for offset in 0..3 {
-	    let g_idx = g * 3 + offset;
-	    let b = (if g_idx < bs.len() { bs[g_idx] } else { 0 }) as u32;
-	    enc >>= 8;
-	    enc |= b << 16;
-	}
-	for _ in 0..4 {
-	    out.push(CRYPT_HASH64[(enc & 0x3F) as usize] as char);
-	    enc >>= 6;
-	}
+        let mut enc = 0u32;
+        for offset in 0..3 {
+            let g_idx = g * 3 + offset;
+            let b = (if g_idx < bs.len() { bs[g_idx] } else { 0 }) as u32;
+            enc >>= 8;
+            enc |= b << 16;
+        }
+        for _ in 0..4 {
+            out.push(CRYPT_HASH64[(enc & 0x3F) as usize] as char);
+            enc >>= 6;
+        }
     }
     match bs.len() % 3 {
-	1 => { out.pop(); out.pop(); },
-	2 => { out.pop(); },
-	_ => (),
+        1 => {
+            out.pop();
+            out.pop();
+        }
+        2 => {
+            out.pop();
+        }
+        _ => (),
     }
     out
 }
@@ -143,23 +159,23 @@ pub fn decode_val(val: &str, len: usize) -> Result<u32> {
     let mut processed = 0;
     let mut s = 0u32;
     for b in val.chars() {
-	let b = b as u32 - 0x20;
-	if b > 0x60 {
-	    return Err(Error::EncodingError);
-	}
-	let dec = CRYPT_HASH64_ENC_MAP[b as usize];
-	if dec == 64 {
-	    return Err(Error::EncodingError);
-	}
-	s >>= 6;
-	s |= (dec as u32) << 26;
-	processed += 1;
-	if processed == len {
-	    break;
-	}
+        let b = b as u32 - 0x20;
+        if b > 0x60 {
+            return Err(Error::EncodingError);
+        }
+        let dec = CRYPT_HASH64_ENC_MAP[b as usize];
+        if dec == 64 {
+            return Err(Error::EncodingError);
+        }
+        s >>= 6;
+        s |= (dec as u32) << 26;
+        processed += 1;
+        if processed == len {
+            break;
+        }
     }
     if processed < len {
-	return Err(Error::InsufficientLength);
+        return Err(Error::InsufficientLength);
     }
     Ok(s >> (32 - 6 * len))
 }
@@ -167,15 +183,15 @@ pub fn decode_val(val: &str, len: usize) -> Result<u32> {
 pub fn encode_val(mut val: u32, mut nhex: usize) -> String {
     let mut val_arr = [0u8; 4];
     if nhex > 4 {
-	nhex = 4;
+        nhex = 4;
     }
     let vlen = nhex;
     let mut i = 0;
     while nhex > 0 {
-	nhex -= 1;
-	val_arr[i] = CRYPT_HASH64[(val & 0x3F) as usize];
-	val >>= 6;
-	i += 1;
+        nhex -= 1;
+        val_arr[i] = CRYPT_HASH64[(val & 0x3F) as usize];
+        val >>= 6;
+        i += 1;
     }
     val_arr[..vlen].iter().map(|&b| b as char).collect()
 }
@@ -186,53 +202,63 @@ mod tests {
 
     #[test]
     fn bcrypt_hash64() {
-	for len in 1..=24 {
-	    let input: Vec<u8> = (0..len).map(|i| (i * 37 + 13) as u8).collect();
-	    let encoded = bcrypt_hash64_encode(&input);
-	    let mut decoded = vec![0u8; input.len()];
-	    bcrypt_hash64_decode(&encoded, &mut decoded).expect("decode");
-	    assert_eq!(input, decoded, "roundtrip failed for len={}", len);
-	}
+        for len in 1..=24 {
+            let input: Vec<u8> = (0..len).map(|i| (i * 37 + 13) as u8).collect();
+            let encoded = bcrypt_hash64_encode(&input);
+            let mut decoded = vec![0u8; input.len()];
+            bcrypt_hash64_decode(&encoded, &mut decoded).expect("decode");
+            assert_eq!(input, decoded, "roundtrip failed for len={}", len);
+        }
     }
 
     #[test]
     fn bcrypt_hash64_encode_length() {
-	// len % 3 == 0: output is len/3 * 4
-	// len % 3 == 1: output is (len/3 + 1) * 4 - 2
-	// len % 3 == 2: output is (len/3 + 1) * 4 - 1
-	for len in 1..=24 {
-	    let input = vec![0xABu8; len];
-	    let encoded = bcrypt_hash64_encode(&input);
-	    let expected = match len % 3 {
-		0 => len / 3 * 4,
-		1 => (len / 3 + 1) * 4 - 2,
-		2 => (len / 3 + 1) * 4 - 1,
-		_ => unreachable!(),
-	    };
-	    assert_eq!(encoded.len(), expected, "wrong encoded length for input len={}", len);
-	}
+        // len % 3 == 0: output is len/3 * 4
+        // len % 3 == 1: output is (len/3 + 1) * 4 - 2
+        // len % 3 == 2: output is (len/3 + 1) * 4 - 1
+        for len in 1..=24 {
+            let input = vec![0xABu8; len];
+            let encoded = bcrypt_hash64_encode(&input);
+            let expected = match len % 3 {
+                0 => len / 3 * 4,
+                1 => (len / 3 + 1) * 4 - 2,
+                2 => (len / 3 + 1) * 4 - 1,
+                _ => unreachable!(),
+            };
+            assert_eq!(
+                encoded.len(),
+                expected,
+                "wrong encoded length for input len={}",
+                len
+            );
+        }
     }
 
     #[test]
     fn md5_sha2_hash64_encode_length() {
-	for len in 1..=24 {
-	    let input = vec![0xCDu8; len];
-	    let encoded = md5_sha2_hash64_encode(&input);
-	    let expected = match len % 3 {
-		0 => len / 3 * 4,
-		1 => (len / 3 + 1) * 4 - 2,
-		2 => (len / 3 + 1) * 4 - 1,
-		_ => unreachable!(),
-	    };
-	    assert_eq!(encoded.len(), expected, "wrong encoded length for input len={}", len);
-	}
+        for len in 1..=24 {
+            let input = vec![0xCDu8; len];
+            let encoded = md5_sha2_hash64_encode(&input);
+            let expected = match len % 3 {
+                0 => len / 3 * 4,
+                1 => (len / 3 + 1) * 4 - 2,
+                2 => (len / 3 + 1) * 4 - 1,
+                _ => unreachable!(),
+            };
+            assert_eq!(
+                encoded.len(),
+                expected,
+                "wrong encoded length for input len={}",
+                len
+            );
+        }
     }
 
     #[test]
     fn sha1crypt_hash64_encode_length() {
-	let input = [0x42u8; 20];
-	let encoded = sha1crypt_hash64_encode(&input);
-	// 20 bytes -> div_ceil(20, 3) = 7 groups -> 28 chars
-	assert_eq!(encoded.len(), 28);
+        let input = [0x42u8; 20];
+        let encoded = sha1crypt_hash64_encode(&input);
+        // 20 bytes -> div_ceil(20, 3) = 7 groups -> 28 chars
+        assert_eq!(encoded.len(), 28);
     }
 }
