@@ -9,37 +9,36 @@ on:
       - master
 
 jobs:
-  build:
-
+  test:
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-2019, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
         rust: [stable, nightly]
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v1
-      - name: Install rust toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-          override: true
       - name: Build
-        uses: actions-rs/cargo@v1
-        # Force to build without warnings
+        run: cargo build --verbose
         env:
           RUSTFLAGS: '-D warnings'
-        with:
-          command: build
-          args: --verbose
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        # force to build tests without warnings
+      - name: Test
+        run: cargo test --verbose
         env:
           RUSTFLAGS: '-D warnings'
-        with:
-          command: test
-          args: --verbose
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Format check
+        run: cargo fmt --check
