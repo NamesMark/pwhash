@@ -20,3 +20,8 @@ blowfish = { version = "0.10.0", features = ["bcrypt"] }
 hmac = "0.13.0"
 byteorder = "1.5.0"
 rand = "0.10.0"
+
+# cargo-machete scans for the package name `md_5`, but the crate's library
+# is `md5` (used in src/md5_crypt.rs), so it cannot see the usage.
+[package.metadata.cargo-machete]
+ignored = ["md-5"]
